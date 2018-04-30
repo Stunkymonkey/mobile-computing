@@ -2,11 +2,12 @@
 import RPi.GPIO as GPIO
 import time
 import random
+from sys import stdout
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(17, GPIO.IN)
 
-SLEEP = 1
+SLEEP = 0.1
 
 time.sleep(SLEEP / 2)
 
@@ -22,7 +23,8 @@ def main():
         # result += str(int(read()))
         time.sleep(SLEEP)
         if (len(result) == 7):
-            print(chr(int(result, 2)))
+            stdout.write(chr(int(result, 2)))
+            stdout.flush()
             result = ""
 
 
