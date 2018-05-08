@@ -53,9 +53,9 @@ def send(thread_id):
     data = str("hello from sender" + str(int(thread_id + 1)))
     byte = get_byte_string(data[index], thread_id)
     while True:
+        bit = int(byte[bit_c] == "1") ^ chiping[chip_counter]
         while time.time() < next_send_time:
             time.sleep(WAIT * 0.01)
-        bit = int(byte[bit_c] == "1") ^ chiping[chip_counter]
         output(bit, thread_id)
         next_send_time += WAIT
         # print("send:    ", byte, bit)

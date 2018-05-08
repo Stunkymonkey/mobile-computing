@@ -24,7 +24,10 @@ def main():
             time.sleep(WAIT * 0.01)
         line = ser.readline()
         next_recv_time += WAIT
-        line = 1024 - int(line.rstrip())
+        try:
+            line = 1024 - int(line.rstrip())
+        except ValueError:
+            line = 0
         # print(line)
 
         if (line >= 377):
@@ -46,11 +49,11 @@ def main():
             result2 += str(int(c_result2))
         # print("recieve: ", result)
         if (len(result1) >= 7):
-            # stdout.write(chr(int(result1, 2)))
-            # stdout.write(chr(int(result2, 2)))
-            # stdout.flush()
-            print(chr(int(result1, 2)))
-            print(chr(int(result2, 2)))
+            stdout.write(chr(int(result1, 2)))
+            stdout.write(chr(int(result2, 2)))
+            stdout.flush()
+            # print(chr(int(result1, 2)))
+            # print(chr(int(result2, 2)))
             result1 = ""
             result2 = ""
 
