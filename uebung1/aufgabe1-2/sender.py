@@ -46,9 +46,13 @@ def get_byte_string(char, thread_id):
 
 
 def send(thread_id):
+    # thread 0 does not wait, thread 1 does
     next_send_time = time.time() + (CHARS * WAIT * 7 * thread_id)
+    # index bit in byte
     bit_c = 0
+    # index byte in chars
     index = 0
+    # amount of send chars
     counter = 0
     data = str("hello from sender" + str(int(thread_id + 1)))
     byte = get_byte_string(data[index], thread_id)
@@ -65,6 +69,7 @@ def send(thread_id):
         bit_c = (bit_c + 1) % 7
         counter += 1
         if counter >= CHARS * 7:
+            # wait longer time while other thread is sending
             time.sleep(WAIT * 0.75)
             reset(thread_id)
             next_send_time = next_send_time + (CHARS * WAIT * 7)

@@ -51,10 +51,12 @@ def send(thread_id):
     bit_c = 0
     index = 0
     chip_counter = 0
+    # vectors for each thread
     chiping = ([1, 0] if thread_id else [1, 1])
     data = str("hello from sender" + str(int(thread_id + 1)))
     byte = get_byte_string(data[index], thread_id)
     while True:
+        # xor the bit at position bit_c with chipping
         bit = int(byte[bit_c] == "1") ^ chiping[chip_counter]
         while time.time() < next_send_time:
             time.sleep(WAIT * 0.01)

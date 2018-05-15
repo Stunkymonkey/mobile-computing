@@ -11,6 +11,7 @@ WAIT = 0.01
 
 def main():
     result = ""
+    # wait for half period
     next_recv_time = time.time() + (WAIT / 2.0)
     while True:
         while time.time() < next_recv_time:

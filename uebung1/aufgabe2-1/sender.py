@@ -44,6 +44,8 @@ def send(thread_id):
         output(str(int(state)), thread_id)
         # print("thread:", thread_id, "state:", state)
         state = not state
+        # thread 0 is 2 times faster then thread 1
+        # because we want to reach all states
         next_send_time = next_send_time + WAIT + (thread_id * WAIT)
 
 

@@ -19,6 +19,7 @@ def main():
         next_recv_time += WAIT
         # print("rec: " + str(result))
         if (len(result) == 7):
+            # prints next char in same line
             stdout.write(chr(int(result, 2)))
             stdout.flush()
             # print(chr(int(result, 2)))

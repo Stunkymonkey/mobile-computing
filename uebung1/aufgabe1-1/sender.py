@@ -21,9 +21,11 @@ def output(bit):
 
 
 def get_byte_string(char):
+    # ascii integer
     asc = ord(char)
     # print(asc)
     byte = "{0:b}".format(asc)
+    # prepend missing zeros
     while (len(byte) < 7):
         byte = "0" + byte
     return byte
@@ -31,7 +33,9 @@ def get_byte_string(char):
 
 def main():
     next_send_time = time.time()
+    # index of byte in chars
     index = 0
+    # index of bit in byte
     c_i = 0
     while True:
         byte = get_byte_string(data[index])

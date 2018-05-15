@@ -2,7 +2,6 @@
 
 import serial
 import time
-from sys import stdout
 
 ser = serial.Serial(port='/dev/ttyACM0', baudrate=115200)
 
@@ -18,7 +17,9 @@ mean2 = 0
 
 def main():
     next_recv_time = time.time() + (WAIT / 2.0)
+    # counter where to store the values
     count = 0
+    # amount of values
     output = 0
     while True:
         while time.time() < next_recv_time:
@@ -26,15 +27,18 @@ def main():
         line = ser.readline()
         next_recv_time += WAIT
         line = 1024 - int(line.rstrip())
+        # put the value in the corresponding array
         if (count == 0):
             result0.append(line)
         if (count == 1 or count == 2):
             result1.append(line)
         if (count == 3):
             result2.append(line)
-        # print(line)        
+        # print(line)
         count = (count + 1) % 4
-        if (output == 999):    
+        # when having read 1000 values we calculate the border between the
+        # means
+        if (output == 999):
             if (len(result0) > 0):
                 mean0 = sum(result0) / len(result0)
             if (len(result1) > 0):
@@ -49,8 +53,5 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except KeyboardInterrupt:
-        print("asdf")
     finally:
         ser.close()
-        
