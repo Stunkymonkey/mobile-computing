@@ -44,7 +44,9 @@ def get_byte_string(char, thread_id):
 
 
 def send(thread_id):
-    next_send_time = time.time()
+    current = time.time()
+    next_send_time = current + 10 - (current % 10)
+    # print("next_send_time", next_send_time)
     reset(thread_id)
     bit_c = 0
     index = 0

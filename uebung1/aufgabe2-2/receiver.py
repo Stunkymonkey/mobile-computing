@@ -3,6 +3,7 @@
 import serial
 import time
 from sys import stdout
+import numpy as np
 
 ser = serial.Serial(port='/dev/ttyACM0', baudrate=115200)
 
@@ -10,8 +11,9 @@ WAIT = 0.01
 
 
 def main():
-    next_recv_time = time.time() + (WAIT / 2.0)
-    import numpy as np
+    current = time.time()
+    next_recv_time = current + 10 - (current % 10) + (WAIT / 2.0)
+    # print("next_recv_time", next_recv_time)
     result1 = ""
     result2 = ""
     tmp = 0
