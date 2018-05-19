@@ -11,19 +11,30 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.UUID;
 
 import static android.provider.Settings.Global.DEVICE_NAME;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, AdapterView.OnItemClickListener {
 
-    private static String LOG_TAG = "MC-Task1";
-    private int REQUEST_ENABLE_BT = 42; // Any positive integer should work.
+    private static String LOG_TAG = MainActivity.class.getCanonicalName();
+    public static int REQUEST_ENABLE_BT = 42; // Any positive integer should work.
     private BluetoothAdapter mBluetoothAdapter;
     private String uuid = "8e2e2964-e2f2-4d7e-a128-3e9f03ef6de7";
+    private Button btn_Scan;
+    private Scanner_BTLE mBTLeScanner;
+    private HashMap<String, BTLE_Device> mBTDevicesHashMap;
+    private ArrayList<BTLE_Device> mBTDevicesArrayList;
+    private ListAdapter_BTLE_Device adapter;
 
     public MainActivity() {
     }
@@ -33,7 +44,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        LOG_TAG = getResources().getString(R.string.app_name);
+        mBTDevicesHashMap = new HashMap<>();
+        mBTDevicesArrayList = new ArrayList<>();
+        adapter = new ListAdapter_BTLE_Device(this, R.layout.btle_device_list_item, mBTDevicesArrayList);
+        ListView listView = new ListView(this);
+        listView.setAdapter(adapter);
+        listView.setOnItemClickListener(this);
+        btn_Scan = (Button) findViewById(R.id.btn_scan);
+        ((ScrollView) findViewById(R.id.scrollView)).addView(listView);
+        findViewById(R.id.btn_scan).setOnClickListener(this);
+
         final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         if (bluetoothManager == null) throw new AssertionError();
         mBluetoothAdapter = bluetoothManager.getAdapter();
@@ -80,5 +100,70 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(LOG_TAG, "User allowed bluetooth access!");
         }
     }
+    /**
+     * Adds a device to the ArrayList and Hashmap that the ListAdapter is keeping track of.
+     * @param device the BluetoothDevice to be added
+     * @param rssi the rssi of the BluetoothDevice
+     */
+    public void addDevice(BluetoothDevice device, int rssi) {
 
+        String address = device.getAddress();
+        if (!mBTDevicesHashMap.containsKey(address)) {
+            BTLE_Device btleDevice = new BTLE_Device(device);
+            btleDevice.setRSSI(rssi);
+
+            mBTDevicesHashMap.put(address, btleDevice);
+            mBTDevicesArrayList.add(btleDevice);
+        }
+        else {
+            mBTDevicesHashMap.get(address).setRSSI(rssi);
+        }
+
+        adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+
+            case R.id.btn_scan:
+                Utils.toast(getApplicationContext(), "Scan Button Pressed");
+
+                if (!mBTLeScanner.isScanning()) {
+                    startScan();
+                }
+                else {
+                    stopScan();
+                }
+
+                break;
+            default:
+                break;
+        }
+    }
+    public void startScan(){
+        btn_Scan.setText("Scanning...");
+
+        mBTDevicesArrayList.clear();
+        mBTDevicesHashMap.clear();
+
+        adapter.notifyDataSetChanged();
+
+        mBTLeScanner.start();
+    }
+
+    /**
+     * Stops Scanner_BTLE
+     * Changes the scan button text.
+     */
+    public void stopScan() {
+        btn_Scan.setText("Scan Again");
+
+        mBTLeScanner.stop();
+    }
 }
