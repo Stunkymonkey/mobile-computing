@@ -25,38 +25,35 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothAdapter mBluetoothAdapter;
     private String uuid = "8e2e2964-e2f2-4d7e-a128-3e9f03ef6de7";
 
+    public MainActivity() {
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         LOG_TAG = getResources().getString(R.string.app_name);
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+        if (bluetoothManager == null) throw new AssertionError();
+        mBluetoothAdapter = bluetoothManager.getAdapter();
+
     }
 
     public void scan(View view){
         enableBluetoothOnDevice();
         DeviceScanActivity dsa = new DeviceScanActivity();
-        dsa.scanLeDevice();
+        dsa.scanLeDevice(true);
 
     }
 
     private void enableBluetoothOnDevice()
     {
-        if (mBluetoothAdapter == null)
-        {
-            Log.e(LOG_TAG, "This device does not have a bluetooth adapter");
-            finish();
-            // If the android device does not have bluetooth, just return and get out.
-            // There's nothing the app can do in this case. Closing app.
-        }
-
-        // Check to see if bluetooth is enabled. Prompt to enable it
-        if( !mBluetoothAdapter.isEnabled())
-        {
+        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
+
         if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
             Toast.makeText(this, "BLe not supprted", Toast.LENGTH_SHORT).show();
             finish();
