@@ -1,9 +1,13 @@
 package team11.task1;
 
+import android.Manifest;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.bluetooth.*;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -34,7 +38,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Scanner_BTLE mBTLeScanner;
     private HashMap<String, BTLE_Device> mBTDevicesHashMap;
     private ArrayList<BTLE_Device> mBTDevicesArrayList;
-    private ListAdapter_BTLE_Device adapter;
+    private ListAdapter_BTLE_Devices adapter;
+    private BroadcastReceiver_BTState mBTStateUpdateReceiver;
+    private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
 
     public MainActivity() {
     }
@@ -44,60 +50,86 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
+            Utils.toast(getApplicationContext(), "BLE not supported");
+            finish();
+        }
+
+        mBTStateUpdateReceiver = new BroadcastReceiver_BTState(getApplicationContext());
+        mBTLeScanner = new Scanner_BTLE(this, 7500, -75);
+
         mBTDevicesHashMap = new HashMap<>();
         mBTDevicesArrayList = new ArrayList<>();
-        adapter = new ListAdapter_BTLE_Device(this, R.layout.btle_device_list_item, mBTDevicesArrayList);
+
+        adapter = new ListAdapter_BTLE_Devices(this, R.layout.btle_device_list_item, mBTDevicesArrayList);
+
         ListView listView = new ListView(this);
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(this);
+
         btn_Scan = (Button) findViewById(R.id.btn_scan);
         ((ScrollView) findViewById(R.id.scrollView)).addView(listView);
         findViewById(R.id.btn_scan).setOnClickListener(this);
 
-        final BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
-        if (bluetoothManager == null) throw new AssertionError();
-        mBluetoothAdapter = bluetoothManager.getAdapter();
-
-    }
-
-    public void scan(View view){
-        enableBluetoothOnDevice();
-        DeviceScanActivity dsa = new DeviceScanActivity();
-        dsa.scanLeDevice(true);
-
-    }
-
-    private void enableBluetoothOnDevice()
-    {
-        if (mBluetoothAdapter == null || !mBluetoothAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("This app needs location access");
+            builder.setMessage("Please grant location access so this app can detect peripherals.");
+            builder.setPositiveButton(android.R.string.ok, null);
+            builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialog) {
+                    requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
+                }
+            });
+            builder.show();
         }
 
-        if (!getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) {
-            Toast.makeText(this, "BLe not supprted", Toast.LENGTH_SHORT).show();
-            finish();
-        }
+    }
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        registerReceiver(mBTStateUpdateReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        super.onActivityResult(requestCode, resultCode, data);
+    protected void onPause() {
+        super.onPause();
 
-        if (requestCode == REQUEST_ENABLE_BT)
-        {
-            if (resultCode == 0)
-            {
-                // If the resultCode is 0, the user selected "No" when prompt to
-                // allow the app to enable bluetooth.
-                // You may want to display a dialog explaining what would happen if
-                // the user doesn't enable bluetooth.
-                Toast.makeText(this, "The user decided to deny bluetooth access", Toast.LENGTH_LONG).show();
-                //System.exit(1);
+        stopScan();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        unregisterReceiver(mBTStateUpdateReceiver);
+        stopScan();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        // Check which request we're responding to
+        if (requestCode == REQUEST_ENABLE_BT) {
+            // Make sure the request was successful
+            if (resultCode == RESULT_OK) {
+                // Utils.toast(getApplicationContext(), "Thank you for turning on Bluetooth");
             }
-            else
-                Log.i(LOG_TAG, "User allowed bluetooth access!");
+            else if (resultCode == RESULT_CANCELED) {
+                Utils.toast(getApplicationContext(), "Please turn on Bluetooth");
+            }
         }
     }
     /**
