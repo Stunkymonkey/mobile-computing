@@ -32,9 +32,8 @@ public class Scanner_BTLE {
     private long scanPeriod;
     private int signalStrength;
 
-
-
     private UUID WEATHER_UUID = UUID.fromString("00000002-0000-0000-FDFD-FDFDFDFDFDFD");
+    private UUID FAN_UUID = UUID.fromString("00000001-0000-0000-FDFD-FDFDFDFDFDFD");
     private ParcelUuid PUUID = new ParcelUuid(WEATHER_UUID);
 
     public Scanner_BTLE(MainActivity mainActivity, long scanPeriod, int signalStrength) {
@@ -79,13 +78,13 @@ public class Scanner_BTLE {
     // providing an array of UUID objects that specify the GATT services your app supports.
     private void scanLeDevice(final boolean enable) {
         if (enable && !mScanning) {
-            Utils.toast(ma.getApplicationContext(), "Starting BLE scan...");
+            //Utils.toast(ma.getApplicationContext(), "Starting BLE scan...");
             Log.i(TAG, "started BLE scan");
             // Stops scanning after a pre-defined scan period.
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    Utils.toast(ma.getApplicationContext(), "Stopping BLE scan...");
+                    //Utils.toast(ma.getApplicationContext(), "Stopping BLE scan...");
 
                     mScanning = false;
                     bluetoothLeScanner.stopScan(scanCallback);
@@ -119,17 +118,23 @@ public class Scanner_BTLE {
                 @Override
                 public void onScanResult(int callbackType, ScanResult result) {
                     final ScanResult r = result;
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            ma.addDevice(r.getDevice(), r.getRssi());
-                        }
-                    });
+                    if (r.getRssi() > signalStrength) {
+                        mHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                ma.addDevice(r.getDevice(), r.getRssi());
 
-                    Log.i(TAG, "result: " + result);
+                            }
+                        });
+
+                        Log.i(TAG, "result: " + result);
+                    }
                 }
             };
 
+    public UUID getWEATHER_UUID() {
+        return WEATHER_UUID;
+    }
 
 //    private BluetoothAdapter.LeScanCallback scanCallback =
 //            new BluetoothAdapter.LeScanCallback() {

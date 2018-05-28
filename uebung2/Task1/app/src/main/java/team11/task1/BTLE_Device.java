@@ -17,4 +17,6 @@ public class BTLE_Device {
     public void setRSSI(int rssi) {
         this.rssi = rssi;
     }
+
+    public BluetoothDevice getBluetoothDevice() {return this.bluetoothDevice;}
 }
