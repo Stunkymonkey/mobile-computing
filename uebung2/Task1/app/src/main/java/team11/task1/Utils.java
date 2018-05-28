@@ -51,4 +51,10 @@ public class Utils {
         }
         return data;
     }
+
+    public static final byte[] intToByteArray(int value) {
+        return new byte[] {
+                (byte)(value >>> 8),
+                (byte)value};
+    }
 }

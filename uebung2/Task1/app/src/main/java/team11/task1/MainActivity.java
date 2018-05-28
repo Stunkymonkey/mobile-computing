@@ -29,6 +29,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private BluetoothAdapter mBluetoothAdapter;
     private String uuid = "8e2e2964-e2f2-4d7e-a128-3e9f03ef6de7";
     private Button btn_Scan;
+    private Button btn_temp;
+    private Button btn_hum;
     private Scanner_BTLE mBTLeScanner;
     private HashMap<String, BTLE_Device> mBTDevicesHashMap;
     private ArrayList<BTLE_Device> mBTDevicesArrayList;
@@ -38,8 +40,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
     private BluetoothGatt mGatt;
     private SeekBar seek_bar;
+    private boolean read_temp;
     private final String T_UUID = "00002A1C-0000-1000-8000-00805F9B34FB";
     private final String H_UUID = "00002A6F-0000-1000-8000-00805F9B34FB";
+    private final String I_UUID = "10000001-0000-0000-FDFD-FDFDFDFDFDFD";
+    private final String FAN_UUID = "00000001-0000-0000-FDFD-FDFDFDFDFDFD";
+
+    private float getTemperatureFromBytes(byte[] bytes) {
+        int mantisse = (((int) bytes[3]) << 16) + (((int) bytes[2]) << 8)  + ((int) bytes[1]);
+        float exponent = (float) bytes[4];
+        float value = (float) (mantisse * Math.pow(10.0, exponent));
+        return value;
+    }
+
+    private float getHumidityFromBytes(byte[] bytes) {
+        float value = (((int) bytes[1]) << 8) + ((int) bytes[0]);
+        return value / 100.0f;
+    }
 
 
     private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
@@ -52,13 +69,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            //BluetoothGattCharacteristic gattChar = gatt.getServices().get(0).getCharacteristics().get(0);
-            BluetoothGattCharacteristic gattCharTemp = gatt.getService(mBTLeScanner.getWEATHER_UUID()).getCharacteristic(UUID.fromString(T_UUID));
-            BluetoothGattCharacteristic gattCharHum = gatt.getService(mBTLeScanner.getWEATHER_UUID()).getCharacteristic(UUID.fromString(H_UUID));
-            boolean bla = gatt.readCharacteristic(gattCharTemp);
-            boolean bla2 = gatt.readCharacteristic(gattCharHum);
-            Log.i(LOG_TAG, "Temp boolean "+String.valueOf(bla));
-            Log.i(LOG_TAG, "Hum boolean "+String.valueOf(bla2));
+
         }
 
         @Override
@@ -66,19 +77,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                          BluetoothGattCharacteristic characteristic,
                                          int status) {
 
-            Log.i(LOG_TAG, String.valueOf(status));
-            int mantisse = (((int) characteristic.getValue()[3]) << 16) + (((int) characteristic.getValue()[2]) << 8)  + ((int) characteristic.getValue()[1]);
-            float exponent = (float) characteristic.getValue()[4];
-            float value = (float) (mantisse * Math.pow(10.0, exponent));
-
-            Log.i(LOG_TAG, String.valueOf(value));
-            Log.i(LOG_TAG, Arrays.toString(characteristic.getValue()));
+            if (read_temp) {
+                float value = getTemperatureFromBytes(characteristic.getValue());
+                Log.i(LOG_TAG, String.valueOf(value));
+                ((Button)findViewById(R.id.button_temp)).setText("Temp: "+String.valueOf(value)+"°C");
+            } else {
+                float value = getHumidityFromBytes(characteristic.getValue());
+                Log.i(LOG_TAG, String.valueOf(value));
+                ((Button)findViewById(R.id.button_hum)).setText("Hum: "+String.valueOf(value)+"%");
+            }
         }
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-            Utils.toast(getApplicationContext(), "Char value: " + characteristic.getValue());
+            if (characteristic.getUuid().equals(UUID.fromString(T_UUID))) {
+                float value = getTemperatureFromBytes(characteristic.getValue());
+                ((Button)findViewById(R.id.button_temp)).setText("Temp: "+String.valueOf(value)+"°C");
+                Log.i(LOG_TAG, "Characteristic "+characteristic.getUuid()+ " has changed to " + value);
+            } else if (characteristic.getUuid().equals(UUID.fromString(H_UUID))){
+                float value = getHumidityFromBytes(characteristic.getValue());
+                ((Button)findViewById(R.id.button_hum)).setText("Hum: "+String.valueOf(value)+"%");
+                Log.i(LOG_TAG, "Characteristic "+characteristic.getUuid()+ " has changed to " + value);
+            } else {
+                Log.i(LOG_TAG, "Something wrong here! " + characteristic.getUuid());
+            }
+        }
+
+
+        @Override
+        public void onCharacteristicWrite (BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            Log.i(LOG_TAG, "Writing characteristic: "+characteristic.getUuid());
         }
     };
 
@@ -113,11 +142,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ((ScrollView) findViewById(R.id.scrollView)).addView(listView);
         findViewById(R.id.btn_scan).setOnClickListener(this);
 
+        btn_temp = (Button) findViewById(R.id.button_temp);
+        ((Button) findViewById(R.id.button_temp)).setOnClickListener(this);
+
+        btn_hum = (Button) findViewById(R.id.button_hum);
+        ((Button) findViewById(R.id.button_hum)).setOnClickListener(this);
+
         seek_bar = (SeekBar) findViewById(R.id.seekBar1);
         ((SeekBar) findViewById(R.id.seekBar1)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.i(LOG_TAG, String.valueOf(progress));
+                //Log.i(LOG_TAG, String.valueOf(progress));
             }
 
             @Override
@@ -127,7 +162,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-
+                int seekbar_value = seekBar.getProgress();
+                BluetoothGattCharacteristic gattCharInt = mGatt.getService(UUID.fromString(FAN_UUID)).getCharacteristic(UUID.fromString(I_UUID));
+                gattCharInt.setValue(Utils.intToByteArray(seekbar_value));
+                mGatt.writeCharacteristic(gattCharInt);
+                Log.i(LOG_TAG, "New seekbar value: "+seekBar.getProgress());
             }
         });
 
@@ -239,7 +278,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-
             case R.id.btn_scan:
                 //Utils.toast(getApplicationContext(), "Scan Button Pressed");
 
@@ -249,6 +287,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     stopScan();
                 }
 
+                break;
+            case R.id.button_temp:
+                read_temp = true;
+                BluetoothGattCharacteristic gattCharTemp = mGatt.getService(mBTLeScanner.getWEATHER_UUID()).getCharacteristic(UUID.fromString(T_UUID));
+                mGatt.setCharacteristicNotification(gattCharTemp, true);
+                Log.i(LOG_TAG, gattCharTemp.getDescriptors().get(0).getUuid().toString());
+                BluetoothGattDescriptor t_descriptor = gattCharTemp.getDescriptor(UUID.fromString("00002904-0000-1000-8000-00805f9b34fb"));
+                if (t_descriptor != null) {
+                    t_descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                    mGatt.writeDescriptor(t_descriptor);
+                }
+                mGatt.readCharacteristic(gattCharTemp);
+                break;
+            case R.id.button_hum:
+                read_temp = false;
+                BluetoothGattCharacteristic gattCharHum = mGatt.getService(mBTLeScanner.getWEATHER_UUID()).getCharacteristic(UUID.fromString(H_UUID));
+                mGatt.setCharacteristicNotification(gattCharHum, true);
+                Log.i(LOG_TAG, gattCharHum.getDescriptors().get(0).getUuid().toString());
+                BluetoothGattDescriptor h_descriptor = gattCharHum.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"));
+                if (h_descriptor != null) {
+                    h_descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                    mGatt.writeDescriptor(h_descriptor);
+                }
+                mGatt.readCharacteristic(gattCharHum);
                 break;
             default:
                 break;
