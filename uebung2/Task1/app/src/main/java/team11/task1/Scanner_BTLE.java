@@ -33,7 +33,6 @@ public class Scanner_BTLE {
     private int signalStrength;
 
     private UUID WEATHER_UUID = UUID.fromString("00000002-0000-0000-FDFD-FDFDFDFDFDFD");
-    private UUID FAN_UUID = UUID.fromString("00000001-0000-0000-FDFD-FDFDFDFDFDFD");
     private ParcelUuid PUUID = new ParcelUuid(WEATHER_UUID);
 
     public Scanner_BTLE(MainActivity mainActivity, long scanPeriod, int signalStrength) {
@@ -53,8 +52,8 @@ public class Scanner_BTLE {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             ma.startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         }
+    }
 
-         }
     public boolean isScanning() {
         return mScanning;
     }
@@ -73,19 +72,13 @@ public class Scanner_BTLE {
         scanLeDevice(false);
     }
 
-    // If you want to scan for only specific types of peripherals,
-    // you can instead call startLeScan(UUID[], BluetoothAdapter.LeScanCallback),
-    // providing an array of UUID objects that specify the GATT services your app supports.
     private void scanLeDevice(final boolean enable) {
         if (enable && !mScanning) {
-            //Utils.toast(ma.getApplicationContext(), "Starting BLE scan...");
             Log.i(TAG, "started BLE scan");
             // Stops scanning after a pre-defined scan period.
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    //Utils.toast(ma.getApplicationContext(), "Stopping BLE scan...");
-
                     mScanning = false;
                     bluetoothLeScanner.stopScan(scanCallback);
                     ma.stopScan();
@@ -95,13 +88,10 @@ public class Scanner_BTLE {
             mScanning = true;
             List<ScanFilter> filters = getScanFilters(PUUID);
             ScanSettings settings = new ScanSettings.Builder().build();
-            //bluetoothLeScanner.startScan(filters, settings, scanCallback);
             bluetoothLeScanner.startScan(scanCallback);
-//            mBluetoothAdapter.startLeScan(uuids, mLeScanCallback);
         }
         else {
             mScanning = false;
-            //mBluetoothAdapter.stopLeScan(mLeScanCallback);
             bluetoothLeScanner.stopScan(scanCallback);
         }
     }
@@ -123,10 +113,8 @@ public class Scanner_BTLE {
                             @Override
                             public void run() {
                                 ma.addDevice(r.getDevice(), r.getRssi());
-
                             }
                         });
-
                         Log.i(TAG, "result: " + result);
                     }
                 }
@@ -135,23 +123,4 @@ public class Scanner_BTLE {
     public UUID getWEATHER_UUID() {
         return WEATHER_UUID;
     }
-
-//    private BluetoothAdapter.LeScanCallback scanCallback =
-//            new BluetoothAdapter.LeScanCallback() {
-//                @Override
-//                public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
-//
-//                    final int new_rssi = rssi;
-//                    if (rssi > signalStrength) {
-//                        mHandler.post(new Runnable() {
-//                            @Override
-//                            public void run() {
-//                                ma.addDevice(device, new_rssi);
-//                            }
-//                        });
-//                    }
-//                }
-//            };
-
-
 }

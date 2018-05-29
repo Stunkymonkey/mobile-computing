@@ -21,7 +21,6 @@ public class ListAdapter_BTLE_Devices extends ArrayAdapter<BTLE_Device> {
 
     public ListAdapter_BTLE_Devices(Activity activity, int resource, ArrayList<BTLE_Device> objects) {
         super(activity.getApplicationContext(), resource, objects);
-
         this.activity = activity;
         layoutResourceID = resource;
         devices = objects;
@@ -29,7 +28,6 @@ public class ListAdapter_BTLE_Devices extends ArrayAdapter<BTLE_Device> {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-
         if (convertView == null) {
             LayoutInflater inflater =
                     (LayoutInflater) activity.getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
