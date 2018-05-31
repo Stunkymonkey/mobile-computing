@@ -204,9 +204,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void addDevice(BluetoothDevice device, int rssi) {
-        if (device.getName().equals("No Name") || device.getName().equals(null)) {
-            return;
-        }
         String address = device.getAddress();
         if (!mBTDevicesHashMap.containsKey(address)) {
             BTLE_Device btleDevice = new BTLE_Device(device);
