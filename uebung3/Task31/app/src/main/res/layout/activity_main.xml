@@ -1,18 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="8"
+        android:fillViewport="true"
+        android:id="@+id/scrollView"
+        tools:ignore="Suspicious0dp">
+    </ScrollView>
 
-</android.support.constraint.ConstraintLayout>
+    <Button
+        android:id="@+id/button_temp"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:text="temperature" />
+
+    <Button
+        android:id="@+id/button_hum"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent"
+        android:text="humidity"
+        />
+
+    <SeekBar
+        android:id="@+id/seekBar1"
+        android:layout_width="390dp"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:max="65535" />
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:text="Start Scan"
+        android:id="@+id/btn_scan"/>
+</LinearLayout>
