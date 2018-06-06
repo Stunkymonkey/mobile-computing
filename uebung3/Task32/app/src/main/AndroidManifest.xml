@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="team11.task32">
 
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
@@ -21,7 +22,7 @@
 
         <service
             android:name=".GeoLogService"
-            android:exported="false"></service>
+            android:process=":GeoLogService"></service>
     </application>
 
 </manifest>
