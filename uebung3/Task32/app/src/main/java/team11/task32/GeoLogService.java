@@ -6,9 +6,12 @@ import android.content.Intent;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+
+import java.io.File;
 
 public class GeoLogService extends Service {
     private static final String TAG = "GeoLogService";
@@ -18,37 +21,36 @@ public class GeoLogService extends Service {
     private Location mLastLocation;
 
     private GeoLogServiceImpl impl;
+    private GPX gpx;
 
     private class LocationListener implements android.location.LocationListener
     {
-        public LocationListener(String provider)
-        {
+        public LocationListener(String provider) {
             Log.e(TAG, "LocationListener " + provider);
             mLastLocation = new Location(provider);
         }
 
         @Override
-        public void onLocationChanged(Location location)
-        {
+        public void onLocationChanged(Location location) {
             Log.e(TAG, "onLocationChanged: " + location);
             mLastLocation.set(location);
+            if (gpx != null) {
+                gpx.addPoint(location);
+            }
         }
 
         @Override
-        public void onProviderDisabled(String provider)
-        {
+        public void onProviderDisabled(String provider) {
             Log.e(TAG, "onProviderDisabled: " + provider);
         }
 
         @Override
-        public void onProviderEnabled(String provider)
-        {
+        public void onProviderEnabled(String provider) {
             Log.e(TAG, "onProviderEnabled: " + provider);
         }
 
         @Override
-        public void onStatusChanged(String provider, int status, Bundle extras)
-        {
+        public void onStatusChanged(String provider, int status, Bundle extras) {
             Log.e(TAG, "onStatusChanged: " + provider + " status: " + status);
         }
     }
@@ -59,23 +61,23 @@ public class GeoLogService extends Service {
     };
 
     @Override
-    public IBinder onBind(Intent arg0)
-    {
+    public IBinder onBind(Intent arg0) {
         Log.i(TAG, "Binding Service");
         return impl;
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId)
-    {
+    public int onStartCommand(Intent intent, int flags, int startId) {
         Log.e(TAG, "Starting Service");
+        String filename = "test";
+        gpx = new GPX(new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), filename), filename);
         super.onStartCommand(intent, flags, startId);
         return START_STICKY;
     }
 
     @Override
-    public void onCreate()
-    {
+    public void onCreate() {
         Log.e(TAG, "onCreate");
         initializeLocationManager();
         try {
@@ -100,9 +102,13 @@ public class GeoLogService extends Service {
         impl = new GeoLogServiceImpl();
     }
 
+    /**@Override
+    public void onStopSelf() {
+
+    }*/
+
     @Override
-    public void onDestroy()
-    {
+    public void onDestroy() {
         Log.e(TAG, "Destroying Service");
         super.onDestroy();
         if (mLocationManager != null) {
@@ -113,6 +119,9 @@ public class GeoLogService extends Service {
                     Log.i(TAG, "fail to remove location listners, ignore", ex);
                 }
             }
+        }
+        if (gpx != null) {
+            gpx.closeFile();
         }
     }
 

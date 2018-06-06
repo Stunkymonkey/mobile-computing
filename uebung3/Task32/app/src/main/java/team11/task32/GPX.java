@@ -8,36 +8,41 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 
 public class GPX {
-    private static final String TAG = GPX.class.getName();
+    private final String TAG = GPX.class.getName();
+    private FileWriter writer;
 
-    public static void writePath(File file, String n, List<Location> points) {
-
+    public GPX(File file, String n) {
         String header = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?><gpx xmlns=\"http://www.topografix.com/GPX/1/1\" creator=\"MapSource 6.15.5\" version=\"1.1\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"  xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\"><trk>\n";
         String name = "<name>" + n + "</name><trkseg>\n";
-
-        String segments = "";
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-        for (Location l : points) {
-            segments += "<trkpt lat=\"" + l.getLatitude() + "\" lon=\"" + l.getLongitude() + "\"><time>" + df.format(new Date(l.getTime())) + "</time></trkpt>\n";
-        }
-
-        String footer = "</trkseg></trk></gpx>";
-
         try {
-            FileWriter writer = new FileWriter(file, false);
+            writer = new FileWriter(file, false);
             writer.append(header);
             writer.append(name);
-            writer.append(segments);
+        } catch (IOException e) {
+            Log.e(TAG, "Error Opening/Writing Path",e);
+        }
+    }
+    public void addPoint(Location l){
+
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        String segment = "<trkpt lat=\"" + l.getLatitude() + "\" lon=\"" + l.getLongitude() + "\"><time>" + df.format(new Date(l.getTime())) + "</time></trkpt>\n";
+        try {
+            writer.append(segment);
+        } catch (IOException e) {
+            Log.e(TAG, "Error Writing Path",e);
+        }
+    }
+
+    public void closeFile() {
+        String footer = "</trkseg></trk></gpx>";
+        try {
             writer.append(footer);
             writer.flush();
             writer.close();
-            Log.i(TAG, "Saved " + points.size() + " points.");
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            Log.e(TAG, "Error Writting Path",e);
+            Log.e(TAG, "Error Closing File",e);
         }
     }
 }

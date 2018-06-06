@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v4.app.ActivityCompat;
@@ -40,6 +41,12 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         final TextView text_average_speed = findViewById(R.id.text_average_speed);
 
         ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 2);
+        String state = Environment.getExternalStorageState();
+        if (!Environment.MEDIA_MOUNTED.equals(state)) {
+            Log.i(TAG, "unable to write to file");
+        }
+
 
         button_start.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -52,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
             public void onClick(View v) {
                 Log.i(TAG, "stop");
                 if (i != null) {
+                    getApplicationContext().unbindService(MainActivity.this);
                     MainActivity.this.stopService(i);
                 }
             }
