@@ -1,6 +1,9 @@
-package team11.task1;
+package team11.task31;
 
+import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothClass;
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -10,20 +13,30 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.util.Log;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static team11.task1.MainActivity.REQUEST_ENABLE_BT;
+import static team11.task31.Utils.NAMESPACE_FILTER;
+import static team11.task31.Utils.NAMESPACE_FILTER_MASK;
+import static team11.task31.Utils.TLM_FILTER;
+import static team11.task31.Utils.TLM_FILTER_MASK;
+import static team11.task31.Utils.TYPE_TLM;
+import static team11.task31.Utils.TYPE_UID;
+import static team11.task31.Utils.TYPE_URL;
+import static team11.task31.Utils.UID_SERVICE;
+import static team11.task31.MainActivity.REQUEST_ENABLE_BT;
 
 public class Scanner_BTLE {
 
     private MainActivity ma;
 
-    private BluetoothManager btManager;
+    private static String LOG_TAG = MainActivity.class.getCanonicalName();
     private BluetoothAdapter btAdapter;
     private BluetoothLeScanner bluetoothLeScanner;
     private boolean mScanning;
@@ -32,8 +45,12 @@ public class Scanner_BTLE {
     private long scanPeriod;
     private int signalStrength;
 
-    private UUID WEATHER_UUID = UUID.fromString("00000002-0000-0000-FDFD-FDFDFDFDFDFD");
-    private ParcelUuid PUUID = new ParcelUuid(WEATHER_UUID);
+    public interface OnBeaconEventListener {
+        void onBeaconIdentifier(String deviceAddress, int rssi, String instanceId);
+        void onBeaconTelemetry(String deviceAddress, float battery, float temperature);
+    }
+    private OnBeaconEventListener mBeaconEventListener;
+
 
     public Scanner_BTLE(MainActivity mainActivity, long scanPeriod, int signalStrength) {
         ma = mainActivity;
@@ -54,9 +71,7 @@ public class Scanner_BTLE {
         }
     }
 
-    public boolean isScanning() {
-        return mScanning;
-    }
+    public boolean isScanning() {return mScanning;}
 
     public void start() {
         if (!Utils.checkBluetooth(btAdapter)) {
@@ -86,9 +101,26 @@ public class Scanner_BTLE {
             }, scanPeriod);
 
             mScanning = true;
-            List<ScanFilter> filters = getScanFilters(PUUID);
-            ScanSettings settings = new ScanSettings.Builder().build();
-            bluetoothLeScanner.startScan(scanCallback);
+            ScanFilter beaconFilter = new ScanFilter.Builder()
+                    .setServiceUuid(UID_SERVICE)
+                    .setServiceData(UID_SERVICE, NAMESPACE_FILTER, NAMESPACE_FILTER_MASK)
+                    .build();
+
+            ScanFilter telemetryFilter = new ScanFilter.Builder()
+                    .setServiceUuid(UID_SERVICE)
+                    .setServiceData(UID_SERVICE, TLM_FILTER, TLM_FILTER_MASK)
+                    .build();
+
+            List<ScanFilter> filters = new ArrayList<>();
+            filters.add(beaconFilter);
+            filters.add(telemetryFilter);
+
+            ScanSettings settings = new ScanSettings.Builder()
+                    .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+                    .build();
+
+            //bluetoothLeScanner.startScan(scanCallback);
+            bluetoothLeScanner.startScan(filters, settings, scanCallback);
         }
         else {
             mScanning = false;
@@ -96,31 +128,78 @@ public class Scanner_BTLE {
         }
     }
 
-    private List<ScanFilter> getScanFilters(ParcelUuid PUUID) {
-        return Collections.singletonList(
-                new ScanFilter.Builder()
-                        .setServiceUuid(PUUID)
-                        .build());
+    /* Handle UID packet discovery on the main thread */
+    private void processUidPacket(String deviceAddress, int rssi, String id) {
+        Log.i(LOG_TAG, "Processed Uid packet: "+rssi+", "+id);
+        if (mBeaconEventListener != null) {
+            mBeaconEventListener
+                    .onBeaconIdentifier(deviceAddress, rssi, id);
+        }
     }
 
-    private ScanCallback scanCallback =
-            new ScanCallback() {
-                @Override
-                public void onScanResult(int callbackType, ScanResult result) {
-                    final ScanResult r = result;
-                    if (r.getRssi() > signalStrength) {
-                        mHandler.post(new Runnable() {
+    /* Handle TLM packet discovery on the main thread */
+    private void processTlmPacket(String deviceAddress, float battery, float temp) {
+        Log.i(LOG_TAG, "Processed Tlm packet: "+battery+", "+temp);
+        if (mBeaconEventListener != null) {
+            mBeaconEventListener
+                    .onBeaconTelemetry(deviceAddress, battery, temp);
+        }
+    }
+
+    private ScanCallback scanCallback = new ScanCallback() {
+
+            private Handler mCallbackHandler =
+                    new Handler(Looper.getMainLooper());
+
+            @Override
+            public void onScanResult(int callbackType, ScanResult result) {
+                final ScanResult r = result;
+                if (r.getRssi() > signalStrength) {
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            ma.addDevice(r.getDevice(), r.getRssi());
+                        }
+                    });
+                    Log.i(TAG, "result: " + result);
+                }
+                byte[] data = result.getScanRecord().getServiceData(UID_SERVICE);
+                if (data == null) {
+                    Log.w(TAG, "Invalid Eddystone scan result.");
+                    return;
+                }
+
+                final String deviceAddress = result.getDevice().getAddress();
+                final int rssi = result.getRssi();
+                byte frameType = data[0];
+                switch (frameType) {
+                    case TYPE_UID:
+                        final String id = SampleBeacon.getInstanceId(data);
+
+                        mCallbackHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                ma.addDevice(r.getDevice(), r.getRssi());
+                                processUidPacket(deviceAddress, rssi, id);
                             }
                         });
-                        Log.i(TAG, "result: " + result);
-                    }
+                        break;
+                    case TYPE_TLM:
+                        //Parse out battery voltage
+                        final float battery = SampleBeacon.getTlmBattery(data);
+                        final float temp = SampleBeacon.getTlmTemperature(data);
+                        mCallbackHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                processTlmPacket(deviceAddress, battery, temp);
+                            }
+                        });
+                        break;
+                    case TYPE_URL:
+                        Log.i(LOG_TAG, "Received URL package");
+                        return;
+                    default:
+                        Log.w(TAG, "Invalid Eddystone scan result.");
                 }
-            };
-
-    public UUID getWEATHER_UUID() {
-        return WEATHER_UUID;
-    }
+            }
+        };
 }
