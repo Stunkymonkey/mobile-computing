@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/text_latitude"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="Latitude: "
+        tools:layout_editor_absoluteX="5dp" />
+
+    <TextView
+        android:id="@+id/text_longitude"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Longitude: "
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="19dp" />
+
+    <TextView
+        android:id="@+id/text_distance"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Distance: "
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="38dp" />
+
+    <TextView
+        android:id="@+id/text_average_speed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Average Speed: "
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="57dp" />
+
+    <Button
+        android:id="@+id/button_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Service"
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="91dp" />
+
+    <Button
+        android:id="@+id/button_stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop Service"
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="139dp" />
+
+    <Button
+        android:id="@+id/button_update"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Update Values"
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="187dp" />
+
+    <Button
+        android:id="@+id/button_exit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Exit"
+        tools:layout_editor_absoluteX="5dp"
+        tools:layout_editor_absoluteY="235dp" />
+
+
+
+
+</android.support.constraint.ConstraintLayout>
