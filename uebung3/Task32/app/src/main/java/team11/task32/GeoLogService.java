@@ -7,19 +7,20 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.RemoteException;
 import android.util.Log;
 
-public class GeoLogService extends Service
-{
+public class GeoLogService extends Service {
     private static final String TAG = "GeoLogService";
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 10f;
+    private Location mLastLocation;
+
+    private GeoLogServiceImpl impl;
 
     private class LocationListener implements android.location.LocationListener
     {
-        Location mLastLocation;
-
         public LocationListener(String provider)
         {
             Log.e(TAG, "LocationListener " + provider);
@@ -48,7 +49,7 @@ public class GeoLogService extends Service
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras)
         {
-            Log.e(TAG, "onStatusChanged: " + provider);
+            Log.e(TAG, "onStatusChanged: " + provider + " status: " + status);
         }
     }
 
@@ -60,13 +61,14 @@ public class GeoLogService extends Service
     @Override
     public IBinder onBind(Intent arg0)
     {
-        return null;
+        Log.i(TAG, "Binding Service");
+        return impl;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
-        Log.e(TAG, "onStartCommand");
+        Log.e(TAG, "Starting Service");
         super.onStartCommand(intent, flags, startId);
         return START_STICKY;
     }
@@ -94,12 +96,14 @@ public class GeoLogService extends Service
         } catch (IllegalArgumentException ex) {
             Log.d(TAG, "gps provider does not exist " + ex.getMessage());
         }
+        Log.i(TAG, "Creating Service");
+        impl = new GeoLogServiceImpl();
     }
 
     @Override
     public void onDestroy()
     {
-        Log.e(TAG, "onDestroy");
+        Log.e(TAG, "Destroying Service");
         super.onDestroy();
         if (mLocationManager != null) {
             for (int i = 0; i < mLocationListeners.length; i++) {
@@ -116,6 +120,29 @@ public class GeoLogService extends Service
         Log.e(TAG, "initializeLocationManager");
         if (mLocationManager == null) {
             mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
+        }
+    }
+
+    private class GeoLogServiceImpl extends IGeoLogService.Stub {
+
+        @Override
+        public double getLatitude() throws RemoteException {
+            return mLastLocation.getLatitude();
+        }
+
+        @Override
+        public double getLongitude() throws RemoteException {
+            return mLastLocation.getLongitude();
+        }
+
+        @Override
+        public double getDistance() throws RemoteException {
+            return 0;
+        }
+
+        @Override
+        public double getAverageSpeed() throws RemoteException {
+            return 0;
         }
     }
 }

@@ -21,8 +21,9 @@
         </activity>
 
         <service
-            android:name=".GeoLogService"
-            android:process=":GeoLogService"></service>
+            android:name="GeoLogService"
+            android:exported="true">
+        </service>
     </application>
 
 </manifest>
