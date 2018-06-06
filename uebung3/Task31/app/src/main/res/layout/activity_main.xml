@@ -15,6 +15,36 @@
         tools:ignore="Suspicious0dp">
     </ScrollView>
 
+    <TextView
+        android:id="@+id/text_view_beaconid"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="BeaconID: " />
+
+    <TextView
+        android:id="@+id/text_view_url"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="URL: " />
+
+    <TextView
+        android:id="@+id/text_view_voltage"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="Voltage: " />
+
+    <TextView
+        android:id="@+id/text_view_temperature"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="Temperature: " />
+
+    <TextView
+        android:id="@+id/text_view_distance"
+        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:text="Distance: " />
+
     <Button
         android:layout_width="match_parent"
         android:layout_height="0dp"

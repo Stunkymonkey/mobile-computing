@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.util.Log;
+import android.widget.Button;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,6 +32,8 @@ import static team11.task31.Utils.TYPE_UID;
 import static team11.task31.Utils.TYPE_URL;
 import static team11.task31.Utils.UID_SERVICE;
 import static team11.task31.MainActivity.REQUEST_ENABLE_BT;
+import static team11.task31.Utils.URL_FILTER;
+import static team11.task31.Utils.URL_FILTER_MASK;
 
 public class Scanner_BTLE {
 
@@ -47,6 +50,7 @@ public class Scanner_BTLE {
 
     public interface OnBeaconEventListener {
         void onBeaconIdentifier(String deviceAddress, int rssi, String instanceId);
+        void onBeaconUrl(String deviceAddress);
         void onBeaconTelemetry(String deviceAddress, float battery, float temperature);
     }
     private OnBeaconEventListener mBeaconEventListener;
@@ -106,6 +110,11 @@ public class Scanner_BTLE {
                     .setServiceData(UID_SERVICE, NAMESPACE_FILTER, NAMESPACE_FILTER_MASK)
                     .build();
 
+            ScanFilter urlFilter = new ScanFilter.Builder()
+                    .setServiceUuid(UID_SERVICE)
+                    .setServiceData(UID_SERVICE, URL_FILTER, URL_FILTER_MASK)
+                    .build();
+
             ScanFilter telemetryFilter = new ScanFilter.Builder()
                     .setServiceUuid(UID_SERVICE)
                     .setServiceData(UID_SERVICE, TLM_FILTER, TLM_FILTER_MASK)
@@ -113,6 +122,7 @@ public class Scanner_BTLE {
 
             List<ScanFilter> filters = new ArrayList<>();
             filters.add(beaconFilter);
+            filters.add(urlFilter);
             filters.add(telemetryFilter);
 
             ScanSettings settings = new ScanSettings.Builder()
@@ -129,8 +139,10 @@ public class Scanner_BTLE {
     }
 
     /* Handle UID packet discovery on the main thread */
-    private void processUidPacket(String deviceAddress, int rssi, String id) {
-        Log.i(LOG_TAG, "Processed Uid packet: "+rssi+", "+id);
+    private void processUidPacket(String deviceAddress, int rssi, String id, int tx_power) {
+        Log.i(LOG_TAG, "Processed Uid packet: "+rssi+", "+id+", "+tx_power);
+        ma.text_distance.setText("Distance: "+Utils.RssiToDistance(rssi, tx_power)+"m");
+        ma.text_beaconid.setText("BeaconID: "+id);
         if (mBeaconEventListener != null) {
             mBeaconEventListener
                     .onBeaconIdentifier(deviceAddress, rssi, id);
@@ -138,8 +150,20 @@ public class Scanner_BTLE {
     }
 
     /* Handle TLM packet discovery on the main thread */
+    private void processUrlPacket(String deviceAddress, String prefix, String url) {
+        Log.i(LOG_TAG, "Processed Url packet: "+prefix+url);
+        ma.text_url.setText("URL: "+prefix+url);
+        if (mBeaconEventListener != null) {
+            mBeaconEventListener
+                    .onBeaconUrl(deviceAddress);
+        }
+    }
+
+    /* Handle TLM packet discovery on the main thread */
     private void processTlmPacket(String deviceAddress, float battery, float temp) {
         Log.i(LOG_TAG, "Processed Tlm packet: "+battery+", "+temp);
+        ma.text_voltage.setText("Voltage: "+battery+"V");
+        ma.text_temperature.setText("Temperature: "+temp+"°C");
         if (mBeaconEventListener != null) {
             mBeaconEventListener
                     .onBeaconTelemetry(deviceAddress, battery, temp);
@@ -161,7 +185,7 @@ public class Scanner_BTLE {
                             ma.addDevice(r.getDevice(), r.getRssi());
                         }
                     });
-                    Log.i(TAG, "result: " + result);
+                    //Log.i(TAG, "result: " + result);
                 }
                 byte[] data = result.getScanRecord().getServiceData(UID_SERVICE);
                 if (data == null) {
@@ -175,11 +199,11 @@ public class Scanner_BTLE {
                 switch (frameType) {
                     case TYPE_UID:
                         final String id = SampleBeacon.getInstanceId(data);
-
+                        final int tx_power = SampleBeacon.getTxPower(data);
                         mCallbackHandler.post(new Runnable() {
                             @Override
                             public void run() {
-                                processUidPacket(deviceAddress, rssi, id);
+                                processUidPacket(deviceAddress, rssi, id, tx_power);
                             }
                         });
                         break;
@@ -195,7 +219,9 @@ public class Scanner_BTLE {
                         });
                         break;
                     case TYPE_URL:
-                        Log.i(LOG_TAG, "Received URL package");
+                        final String urlprefix = SampleBeacon.getUrlPrefix(data);
+                        final String url = SampleBeacon.getUrl(data);
+                        processUrlPacket(deviceAddress, urlprefix, url);
                         return;
                     default:
                         Log.w(TAG, "Invalid Eddystone scan result.");

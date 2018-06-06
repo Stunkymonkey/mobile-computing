@@ -18,8 +18,8 @@ public class Utils {
     static final byte[] NAMESPACE_FILTER = {
             0x00, //Frame type
             0x00, //TX power
-            (byte)0xd8, (byte)0x9b, (byte)0xed, (byte)0x6e, (byte)0x13,
-            (byte)0x0e, (byte)0xe5, (byte)0xcf, (byte)0x1b, (byte)0xa1,
+            (byte)0x21, (byte)0x83, (byte)0xa8, (byte)0x77, (byte)0xa7,
+            (byte)0xb7, (byte)0x5d, (byte)0x07, (byte)0x15, (byte)0x13,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
 
@@ -30,6 +30,23 @@ public class Utils {
             (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF,
             (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+
+    static final byte[] URL_FILTER = {
+            0x10, //Frame type
+            0x00, //TX power
+            0x03, //URL prefix
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00
+    };
+
+    // Force frame type and protocol to match
+    static final byte[] URL_FILTER_MASK = {
+            (byte)0xFF,
+            0x00,
+            0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00
     };
 
     static final byte[] TLM_FILTER = {
@@ -100,9 +117,9 @@ public class Utils {
                 (byte)value};
     }
 
-    public static float RssiToDistance(int Rssi) {
-        int MeasuredPower = -69; //(for kontakt BLE beacons)
-        int N = 2;
-        return 10^((MeasuredPower - Rssi)/(10*N));
+    public static double RssiToDistance(int Rssi, int a) {
+        //return ((double)(a - Rssi))/100.0;
+        a = -60;
+        return Math.pow(10,((double)(Rssi - a))/-20.0);
     }
 }

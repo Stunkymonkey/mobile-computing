@@ -16,6 +16,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +26,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private static String LOG_TAG = MainActivity.class.getCanonicalName();
     public static int REQUEST_ENABLE_BT = 42; // Any positive integer should work.
+    public TextView text_beaconid;
+    public TextView text_url;
+    public TextView text_voltage;
+    public TextView text_temperature;
+    public TextView text_distance;
+
     private Button btn_Scan;
     private Scanner_BTLE mBTLeScanner;
     private HashMap<String, BTLE_Device> mBTDevicesHashMap;
@@ -60,6 +67,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn_Scan = (Button) findViewById(R.id.btn_scan);
         ((ScrollView) findViewById(R.id.scrollView)).addView(listView);
         ((Button) findViewById(R.id.btn_scan)).setOnClickListener(this);
+
+        text_beaconid = findViewById(R.id.text_view_beaconid);
+        text_url = findViewById(R.id.text_view_url);
+        text_voltage = findViewById(R.id.text_view_voltage);
+        text_temperature = findViewById(R.id.text_view_temperature);
+        text_distance = findViewById(R.id.text_view_distance);
 
         // Location permission
         if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
