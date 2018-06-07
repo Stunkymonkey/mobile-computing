@@ -32,7 +32,7 @@ public class GeoLogService extends Service {
     private class LocationListener implements android.location.LocationListener
     {
         public LocationListener(String provider) {
-            Log.e(TAG, "LocationListener " + provider);
+            Log.i(TAG, "LocationListener " + provider);
             mLastLocation = new Location(provider);
             first = true;
             distance = 0;
@@ -40,7 +40,7 @@ public class GeoLogService extends Service {
 
         @Override
         public void onLocationChanged(Location location) {
-            Log.e(TAG, "onLocationChanged: " + location);
+            Log.i(TAG, "onLocationChanged: " + location);
             if (first) {
                 first = false;
                 firstLocation = location;
@@ -55,17 +55,17 @@ public class GeoLogService extends Service {
 
         @Override
         public void onProviderDisabled(String provider) {
-            Log.e(TAG, "onProviderDisabled: " + provider);
+            Log.i(TAG, "onProviderDisabled: " + provider);
         }
 
         @Override
         public void onProviderEnabled(String provider) {
-            Log.e(TAG, "onProviderEnabled: " + provider);
+            Log.i(TAG, "onProviderEnabled: " + provider);
         }
 
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
-            Log.e(TAG, "onStatusChanged: " + provider + " status: " + status);
+            Log.i(TAG, "onStatusChanged: " + provider + " status: " + status);
         }
     }
 
@@ -82,9 +82,9 @@ public class GeoLogService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.e(TAG, "Starting Service");
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-        String filename = df.format(new Date(mLastLocation.getTime()));
+        Log.i(TAG, "Starting Service");
+        //DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        String filename = "mobile-computing.gpx"; //df.format(new Date(mLastLocation.getTime()));
         gpx = new GPX(new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_DOWNLOADS), filename), filename);
         super.onStartCommand(intent, flags, startId);
@@ -93,7 +93,7 @@ public class GeoLogService extends Service {
 
     @Override
     public void onCreate() {
-        Log.e(TAG, "onCreate");
+        Log.i(TAG, "onCreate");
         initializeLocationManager();
         try {
             mLocationManager.requestLocationUpdates(
@@ -119,7 +119,7 @@ public class GeoLogService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.e(TAG, "Destroying Service");
+        Log.i(TAG, "Destroying Service");
         super.onDestroy();
         if (mLocationManager != null) {
             for (int i = 0; i < mLocationListeners.length; i++) {
@@ -129,14 +129,15 @@ public class GeoLogService extends Service {
                     Log.i(TAG, "fail to remove location listners, ignore", ex);
                 }
             }
+            //mLocationManager = null;
         }
         if (gpx != null) {
-            gpx.closeFile();
+            gpx.close();
         }
     }
 
     private void initializeLocationManager() {
-        Log.e(TAG, "initializeLocationManager");
+        Log.i(TAG, "initializeLocationManager");
         if (mLocationManager == null) {
             mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
         }
@@ -146,12 +147,18 @@ public class GeoLogService extends Service {
 
         @Override
         public double getLatitude() throws RemoteException {
-            return mLastLocation.getLatitude();
+            if (mLastLocation != null) {
+                return mLastLocation.getLatitude();
+            }
+            return 0;
         }
 
         @Override
         public double getLongitude() throws RemoteException {
-            return mLastLocation.getLongitude();
+            if (mLastLocation != null) {
+                return mLastLocation.getLongitude();
+            }
+            return 0;
         }
 
         @Override
@@ -161,8 +168,11 @@ public class GeoLogService extends Service {
 
         @Override
         public double getAverageSpeed() throws RemoteException {
-            double interval = (mLastLocation.getTime() - firstLocation.getTime()) / 1000;
-            return distance / (interval);
+            if (mLastLocation != null || firstLocation != null){
+                double interval = (mLastLocation.getTime() - firstLocation.getTime()) / 1000;
+                return distance / (interval);
+            }
+            return 0;
         }
     }
 }

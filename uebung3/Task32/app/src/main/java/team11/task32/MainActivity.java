@@ -74,46 +74,45 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
                 DecimalFormat pf = new DecimalFormat("#.000000");
                 double r;
 
-                assert(geoLogServiceProxy != null);
-                try {
-                    r = geoLogServiceProxy.getLatitude();
-                } catch (RemoteException e) {
-                    Log.e(TAG, e.getMessage());
-                    return;
-                }
-                text_latitude.setText("Latitude: " + pf.format(r));
-                try {
-                    r = geoLogServiceProxy.getLongitude();
-                } catch (RemoteException e) {
-                    Log.e(TAG, e.getMessage());
-                    return;
-                }
-                text_longitude.setText("Longitude: " + pf.format(r));
-                try {
-                    r = geoLogServiceProxy.getDistance();
-                } catch (RemoteException e) {
-                    Log.e(TAG, e.getMessage());
-                    return;
-                }
+                if(geoLogServiceProxy != null) {
+                    try {
+                        r = geoLogServiceProxy.getLatitude();
+                    } catch (RemoteException e) {
+                        Log.e(TAG, e.getMessage());
+                        return;
+                    }
+                    text_latitude.setText("Latitude: " + pf.format(r));
+                    try {
+                        r = geoLogServiceProxy.getLongitude();
+                    } catch (RemoteException e) {
+                        Log.e(TAG, e.getMessage());
+                        return;
+                    }
+                    text_longitude.setText("Longitude: " + pf.format(r));
+                    try {
+                        r = geoLogServiceProxy.getDistance();
+                    } catch (RemoteException e) {
+                        Log.e(TAG, e.getMessage());
+                        return;
+                    }
 
-                text_distance.setText("Distance: " + df.format(r) + " m");
-                try {
-                    r = geoLogServiceProxy.getAverageSpeed();
-                } catch (RemoteException e) {
-                    Log.e(TAG, e.getMessage());
-                    return;
+                    text_distance.setText("Distance: " + df.format(r) + " m");
+                    try {
+                        r = geoLogServiceProxy.getAverageSpeed();
+                    } catch (RemoteException e) {
+                        Log.e(TAG, e.getMessage());
+                        return;
+                    }
+                    text_average_speed.setText("Average Speed: " + df.format(r) + " m/s");
                 }
-                text_average_speed.setText("Average Speed: " + df.format(r) + " m/s");
-
             }
         });
 
         button_exit.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.i(TAG, "exit");
-                if (i != null) {
-                    stopService(i);
-                }
+                stopService(i);
+                //getApplicationContext().unbindService(MainActivity.this);
                 System.exit(0);
             }
         });
