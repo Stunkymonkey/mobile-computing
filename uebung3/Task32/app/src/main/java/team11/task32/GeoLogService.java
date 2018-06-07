@@ -12,9 +12,6 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import java.io.File;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class GeoLogService extends Service {
     private static final String TAG = "GeoLogService";
@@ -83,11 +80,6 @@ public class GeoLogService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i(TAG, "Starting Service");
-        //DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-        String filename = "mobile-computing.gpx"; //df.format(new Date(mLastLocation.getTime()));
-        gpx = new GPX(new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOWNLOADS), filename), filename);
-        super.onStartCommand(intent, flags, startId);
         return START_STICKY;
     }
 
@@ -115,12 +107,19 @@ public class GeoLogService extends Service {
         }
         Log.i(TAG, "Creating Service");
         impl = new GeoLogServiceImpl();
+        //DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        String filename = "mobile-computing.gpx"; //df.format(new Date(mLastLocation.getTime()));
+        File f = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename);
+        gpx = new GPX(f, filename);
+        //Log.i(TAG, "file: " + f.getAbsolutePath() + filename);
     }
 
     @Override
     public void onDestroy() {
         Log.i(TAG, "Destroying Service");
-        super.onDestroy();
+        if (gpx != null) {
+            gpx.close();
+        }
         if (mLocationManager != null) {
             for (int i = 0; i < mLocationListeners.length; i++) {
                 try {
@@ -131,9 +130,7 @@ public class GeoLogService extends Service {
             }
             //mLocationManager = null;
         }
-        if (gpx != null) {
-            gpx.close();
-        }
+        super.onDestroy();
     }
 
     private void initializeLocationManager() {
@@ -168,7 +165,7 @@ public class GeoLogService extends Service {
 
         @Override
         public double getAverageSpeed() throws RemoteException {
-            if (mLastLocation != null || firstLocation != null){
+            if (mLastLocation != null && firstLocation != null){
                 double interval = (mLastLocation.getTime() - firstLocation.getTime()) / 1000;
                 return distance / (interval);
             }

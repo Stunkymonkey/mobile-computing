@@ -31,7 +31,6 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         setContentView(R.layout.activity_main);
 
         i = new Intent(getApplicationContext(), GeoLogService.class);
-        getApplicationContext().bindService(i, this, BIND_AUTO_CREATE);
 
         final Button button_start = findViewById(R.id.button_start);
         final Button button_stop = findViewById(R.id.button_stop);
@@ -53,16 +52,14 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         button_start.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.i(TAG, "start");
-                startService(i);
+                getApplicationContext().bindService(i, MainActivity.this, BIND_AUTO_CREATE);
             }
         });
 
         button_stop.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.i(TAG, "stop");
-                if (i != null) {
-                    stopService(i);
-                }
+                getApplicationContext().unbindService(MainActivity.this);
             }
         });
 
@@ -111,15 +108,13 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         button_exit.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.i(TAG, "exit");
-                stopService(i);
-                //getApplicationContext().unbindService(MainActivity.this);
                 System.exit(0);
             }
         });
     }
+
     @Override
     public void onDestroy(){
-        getApplicationContext().unbindService(this);
         super.onDestroy();
     }
 
