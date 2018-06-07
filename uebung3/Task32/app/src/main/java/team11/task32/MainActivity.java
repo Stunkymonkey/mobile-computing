@@ -15,12 +15,15 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.text.DecimalFormat;
+
 public class MainActivity extends AppCompatActivity implements ServiceConnection{
 
     private static final String TAG = "Task3.2";
     Intent i;
 
     private IGeoLogService geoLogServiceProxy;
+    private String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,18 +43,17 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         final TextView text_distance = findViewById(R.id.text_distance);
         final TextView text_average_speed = findViewById(R.id.text_average_speed);
 
-        ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 2);
+        ActivityCompat.requestPermissions(this,permissions, 1);
+
         String state = Environment.getExternalStorageState();
         if (!Environment.MEDIA_MOUNTED.equals(state)) {
             Log.i(TAG, "unable to write to file");
         }
 
-
         button_start.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.i(TAG, "start");
-                MainActivity.this.startService(i);
+                startService(i);
             }
         });
 
@@ -59,8 +61,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
             public void onClick(View v) {
                 Log.i(TAG, "stop");
                 if (i != null) {
-                    getApplicationContext().unbindService(MainActivity.this);
-                    MainActivity.this.stopService(i);
+                    stopService(i);
                 }
             }
         });
@@ -69,6 +70,8 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
             public void onClick(View v) {
                 Log.i(TAG, "update");
 
+                DecimalFormat df = new DecimalFormat("#.00");
+                DecimalFormat pf = new DecimalFormat("#.000000");
                 double r;
 
                 assert(geoLogServiceProxy != null);
@@ -78,28 +81,29 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
                     Log.e(TAG, e.getMessage());
                     return;
                 }
-                text_latitude.setText("Latitude: " + r);
+                text_latitude.setText("Latitude: " + pf.format(r));
                 try {
                     r = geoLogServiceProxy.getLongitude();
                 } catch (RemoteException e) {
                     Log.e(TAG, e.getMessage());
                     return;
                 }
-                text_longitude.setText("Longitude: " + r);
+                text_longitude.setText("Longitude: " + pf.format(r));
                 try {
                     r = geoLogServiceProxy.getDistance();
                 } catch (RemoteException e) {
                     Log.e(TAG, e.getMessage());
                     return;
                 }
-                text_distance.setText("Distance: " + r);
+
+                text_distance.setText("Distance: " + df.format(r) + " m");
                 try {
                     r = geoLogServiceProxy.getAverageSpeed();
                 } catch (RemoteException e) {
                     Log.e(TAG, e.getMessage());
                     return;
                 }
-                text_average_speed.setText("Average Speed: " + r);
+                text_average_speed.setText("Average Speed: " + df.format(r) + " m/s");
 
             }
         });
@@ -107,14 +111,17 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         button_exit.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.i(TAG, "exit");
+                if (i != null) {
+                    stopService(i);
+                }
                 System.exit(0);
             }
         });
     }
     @Override
     public void onDestroy(){
-        super.onDestroy();
         getApplicationContext().unbindService(this);
+        super.onDestroy();
     }
 
     @Override
@@ -125,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
+        Log.i(TAG, "Service disconnected");
         geoLogServiceProxy = null;
     }
 

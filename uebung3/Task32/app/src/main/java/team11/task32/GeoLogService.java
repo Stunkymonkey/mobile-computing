@@ -12,13 +12,19 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class GeoLogService extends Service {
     private static final String TAG = "GeoLogService";
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 1000;
-    private static final float LOCATION_DISTANCE = 10f;
+    private static final float LOCATION_DISTANCE = 5f;
     private Location mLastLocation;
+    private double distance = 0;
+    private boolean first = true;
+    private Location firstLocation;
 
     private GeoLogServiceImpl impl;
     private GPX gpx;
@@ -28,11 +34,19 @@ public class GeoLogService extends Service {
         public LocationListener(String provider) {
             Log.e(TAG, "LocationListener " + provider);
             mLastLocation = new Location(provider);
+            first = true;
+            distance = 0;
         }
 
         @Override
         public void onLocationChanged(Location location) {
             Log.e(TAG, "onLocationChanged: " + location);
+            if (first) {
+                first = false;
+                firstLocation = location;
+            } else {
+                distance += mLastLocation.distanceTo(location);
+            }
             mLastLocation.set(location);
             if (gpx != null) {
                 gpx.addPoint(location);
@@ -69,9 +83,10 @@ public class GeoLogService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.e(TAG, "Starting Service");
-        String filename = "test";
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+        String filename = df.format(new Date(mLastLocation.getTime()));
         gpx = new GPX(new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), filename), filename);
+                Environment.DIRECTORY_DOWNLOADS), filename), filename);
         super.onStartCommand(intent, flags, startId);
         return START_STICKY;
     }
@@ -101,11 +116,6 @@ public class GeoLogService extends Service {
         Log.i(TAG, "Creating Service");
         impl = new GeoLogServiceImpl();
     }
-
-    /**@Override
-    public void onStopSelf() {
-
-    }*/
 
     @Override
     public void onDestroy() {
@@ -146,12 +156,13 @@ public class GeoLogService extends Service {
 
         @Override
         public double getDistance() throws RemoteException {
-            return 0;
+            return distance;
         }
 
         @Override
         public double getAverageSpeed() throws RemoteException {
-            return 0;
+            double interval = (mLastLocation.getTime() - firstLocation.getTime()) / 1000;
+            return distance / (interval);
         }
     }
 }
